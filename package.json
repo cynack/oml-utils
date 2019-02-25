@@ -1,0 +1,17 @@
+{
+  "name": "oml-utils",
+  "version": "1.0.0",
+  "description": "oml utils",
+  "scripts": {},
+  "keywords": [
+    "oml"
+  ],
+  "author": "Cynack inc.",
+  "license": "MIT",
+  "bin": {
+    "oml": "bin/oml"
+  },
+  "dependencies": {
+    "axios": "^0.18.0"
+  }
+}

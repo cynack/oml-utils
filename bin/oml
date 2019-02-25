@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const {spawnSync} = require('child_process');
+const axios = require('axios');
+
+switch (process.argv[2]) {
+  case 'init': {
+    init();
+    break;
+  }
+  default: {
+    usage();
+    break;
+  }
+}
+
+async function init() {
+  spawnSync('npm', ['init'], {
+    cwd: process.cwd(),
+    detached: true,
+    stdio: "inherit"
+  });
+  spawnSync('npm', ['install', '--save-dev', 'rollup', 'rollup-plugin-node-resolve', 'rollup-plugin-commonjs', 'rollup-plugin-terser'], {
+    cwd: process.cwd(),
+    detached: true,
+    stdio: "inherit"
+  });
+  spawnSync('git', ['init'], {
+    cwd: process.cwd(),
+    detached: true,
+    stdio: "inherit"
+  });
+  const package = JSON.parse(fs.readFileSync('./package.json'));
+  package.scripts.build = "rollup -c";
+  fs.writeFileSync(path.resolve('./package.json'), JSON.stringify(package, null, '  '));
+  fs.writeFileSync(path.resolve('./rollup.config.js'), rollupConfig());
+  fs.writeFileSync(path.resolve('./.gitignore'), await ignore())
+  fs.mkdirSync(path.resolve('./src'));
+  fs.writeFileSync(path.resolve('./src/index.js'), indexJS());
+}
+
+async function ignore() {
+  const {data} = await axios.get('https://raw.githubusercontent.com/github/gitignore/master/Node.gitignore')
+  return data;
+}
+
+function indexJS() {
+  return `\
+export default {
+  component: '@cube',
+};
+`;
+}
+
+function rollupConfig() {
+  return `\
+import resolve from 'rollup-plugin-node-resolve';
+import commonjs from 'rollup-plugin-commonjs';
+import {terser} from 'rollup-plugin-terser';
+
+const env = process.env.NODE_ENV;
+
+export default {
+  input: 'src/index.js',
+  output: [{
+    file: './dist/index.js',
+    format: 'esm',
+  }],
+  plugins: [
+    resolve(),
+    commonjs(),
+
+    ...(env === 'production' ? [
+      terser(),
+    ] : [
+    ]),
+  ],
+};
+`;}
+
+function usage() {
+  console.log(`\
+OML utils - a development utilities for OML
+
+Usage: oml <command> [options]
+
+Commands:
+  init      Initialize new and empty OML project
+`);
+}
